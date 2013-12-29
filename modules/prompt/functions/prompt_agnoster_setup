@@ -27,7 +27,7 @@ function prompt_agnoster_precmd {
 # Begin a segment
 # Takes two arguments, background and foreground. Both can be omitted,
 # rendering default background/foreground.
-prompt_segment() {
+function prompt_segment {
   local bg fg
   [[ -n $1 ]] && bg="%K{$1}" || bg="%k"
   [[ -n $2 ]] && fg="%F{$2}" || fg="%f"
@@ -41,7 +41,7 @@ prompt_segment() {
 }
 
 # End the prompt, closing any open segments
-prompt_end() {
+function prompt_end {
   if [[ -n $CURRENT_BG ]]; then
     echo -n " %{%k%F{$CURRENT_BG}%}$SEGMENT_SEPARATOR"
   else
@@ -55,7 +55,7 @@ prompt_end() {
 # Each component will draw itself, and hide itself if no information needs to be shown
 
 # Context: user@hostname (who am I and where am I)
-prompt_context() {
+function prompt_context {
   local user=`whoami`
 
   if [[ "$user" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
@@ -64,31 +64,31 @@ prompt_context() {
 }
 
 # Git: branch/detached head, dirty status
-prompt_git() {
-  local ref dirty
-  if $(git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
-    ZSH_THEME_GIT_PROMPT_DIRTY='±'
-    dirty=$(parse_git_dirty)
-    ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git show-ref --head -s --abbrev |head -n1 2> /dev/null)"
-    if [[ -n $dirty ]]; then
+function prompt_git {
+  if [[ -n ${git_info} ]]; then
+    if [[ -n ${git_info[dirty]} ]]; then
       prompt_segment yellow black
     else
       prompt_segment green black
     fi
-    echo -n "${ref/refs\/heads\//⭠ }$dirty"
+    print -Pn ${git_info[prompt]}
   fi
 }
 
 # Dir: current working directory
-prompt_dir() {
+function prompt_dir {
   prompt_segment blue black '%~'
+}
+
+function prefix {
+  [[ -n $1 ]] && print -n "$2 $1"
 }
 
 # Status:
 # - was there an error
 # - am I root
 # - are there background jobs?
-prompt_status() {
+function prompt_status {
   local symbols
   symbols=()
   [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
@@ -100,11 +100,11 @@ prompt_status() {
 
 ### Python info
 ### function added by nikipore
-prompt_python_info() {
+function prompt_python_info {
   [[ -n "$python_info[virtualenv]" ]] && prompt_segment white black "$python_info[virtualenv]"
 }
 
-build_prompt() {
+function build_prompt {
   RETVAL=$?
   prompt_status
   prompt_python_info
@@ -135,24 +135,29 @@ function prompt_agnoster_setup {
   zstyle ':prezto:module:git:info:added' format ' %F{green}✚%f'
   zstyle ':prezto:module:git:info:ahead' format ' %F{yellow}⬆%f'
   zstyle ':prezto:module:git:info:behind' format ' %F{yellow}⬇%f'
-  zstyle ':prezto:module:git:info:branch' format ':%F{green}%f'
-  zstyle ':prezto:module:git:info:commit' format ':%F{green}%.7c%f'
   zstyle ':prezto:module:git:info:deleted' format ' %%F{red}✖%f%'
+  zstyle ':prezto:module:git:info:dirty' format '%D'
   zstyle ':prezto:module:git:info:modified' format ' %%F{blue}✱%f'
-  zstyle ':prezto:module:git:info:position' format ':%F{red}%p%f'
   zstyle ':prezto:module:git:info:renamed' format ' %F{magenta}➜%f'
   zstyle ':prezto:module:git:info:stashed' format ' %F{cyan}✭%f'
   zstyle ':prezto:module:git:info:unmerged' format ' %F{yellow}═%f'
   zstyle ':prezto:module:git:info:untracked' format ' %F{white}◼%f'
-  zstyle ':prezto:module:git:info:keys' format \
-    'prompt' ' %F{blue}git%f$(coalesce "%b" "%p" "%c")%s' \
-    'rprompt' '%A%B%S%a%d%m%r%U%u'
 
+  zstyle ':prezto:module:git:info:branch' format '$(prefix "%b" ⭠)'
+  zstyle ':prezto:module:git:info:position' format '%p'
+  zstyle ':prezto:module:git:info:commit' format '$(prefix "%.7c" ➦)'
+
+  zstyle ':prezto:module:git:info:keys' format \
+    'prompt' '$(coalesce "%b" "%p" "%c")%s' \
+    'status' '%A%B%S%a%d%m%r%U%u' \
+    'dirty' '%D'
+    
+    
 CURRENT_BG='NONE'
 SEGMENT_SEPARATOR='⮀'
 
 PROMPT='%{%f%b%k%}$(build_prompt) '
-RPROMPT='${git_info[rprompt]}'
+RPROMPT='${git_info[status]}'
 SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
 
 }
