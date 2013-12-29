@@ -76,8 +76,12 @@ prompt_git() {
 }
 
 # Dir: current working directory
-prompt_dir() {
+prompt_dir_old() {
   prompt_segment blue black '%~'
+}
+
+prompt_dir() {
+  prompt_segment blue black `get_short_path`
 }
 
 # Status:
@@ -94,11 +98,34 @@ prompt_status() {
   [[ -n "$symbols" ]] && prompt_segment black black "$symbols"
 }
 
+### current time
+### function added by digitalformula
+prompt_time() {
+  prompt_segment white black "`date +%H:%M:%S`"
+}
+
+### current hostname
+### function added by digitalformula
+prompt_hostname() {
+  hostname=`hostname`
+  prompt_segment green black "$hostname"
+}
+
 ## Main prompt (Old version, includes currect directory)
-build_prompt() {
+build_prompt_old() {
   RETVAL=$?
   prompt_status
   prompt_context
+  prompt_dir
+  prompt_git
+  prompt_end
+}
+
+build_prompt() {
+  RETVAL=$?
+  prompt_status
+#  prompt_time
+#  prompt_hostname
   prompt_dir
   prompt_git
   prompt_end
