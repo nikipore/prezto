@@ -76,11 +76,11 @@ prompt_git() {
 }
 
 # Dir: current working directory
-prompt_dir_old() {
+prompt_dir() {
   prompt_segment blue black '%~'
 }
 
-prompt_dir() {
+prompt_dir_new() {
   prompt_segment blue black `get_short_path`
 }
 
